@@ -9,7 +9,7 @@ class TestTextNode(unittest.TestCase):
     
     def test_repr(self):
         node = TextNode("This is a text node", TextType.BOLD, "HTTPS://URL_TESTING")
-        self.assertEqual(str(node),"TextNode(This is a text node, **bold**, HTTPS://URL_TESTING)")
+        self.assertEqual(str(node),"TextNode(This is a text node, bold, HTTPS://URL_TESTING)")
     
     def test_url_none(self):
         node = TextNode("This is a text node", TextType.BOLD)
