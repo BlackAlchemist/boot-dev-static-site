@@ -1,8 +1,8 @@
 import unittest
-from split_delimiter import split_nodes_delimiter
-from textnode import TextNode,TextType
+from split_nodes import split_nodes_delimiter
+from node import TextNode,TextType
 
-class TestSplitDelimiter():
+class TestSplitDelimiter(unittest.TestCase):
     def test_normal_split(self):
         node = TextNode("This is text with a `code block` word", TextType.TEXT)
         new_nodes = split_nodes_delimiter([node], "`", TextType.CODE)
