@@ -1,5 +1,5 @@
 import unittest
-from text_to_textnodes import text_to_textnodes
+from text_to_textnode import text_to_textnodes
 from node import TextNode,TextType
 
 class TestTextToTextNode(unittest.TestCase):

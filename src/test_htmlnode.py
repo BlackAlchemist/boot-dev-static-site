@@ -27,4 +27,4 @@ class TestHTMLNode(unittest.TestCase):
         dict_test = {"href": "https://www.google.com","target": "_blank",}
 
         node = HTMLNode()
-        self.assertEqual(str(node), f"Tag: {node.tag}\nValue: {node.value}\nChildren: {node.children}\nProps: {node.props}")
+        self.assertEqual(str(node), f"HTMLNode({node.tag}, {node.value}, children: {node.children}, {node.props})")

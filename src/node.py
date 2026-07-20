@@ -8,91 +8,100 @@ class TextType(Enum):
     IMAGE = "image"
 
 class TextNode:
-    def __init__(self, text: str, text_type: TextType, url: str | None = None):
-        self.text: str = text
-        self.text_type: TextType = text_type
-        self.url: str | None = url
-        
-    def __eq__(self, other: TextNode):
-        return (self.text == other.text and
-                self.text_type == other.text_type and
-                self.url == other.url)
-    
-    def __repr__(self):
+    def __init__(self, text: str, text_type: TextType, url: str | None = None) -> None:
+        self.text = text
+        self.text_type = text_type
+        self.url = url
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, TextNode):
+            return False
+        return (
+            self.text_type == other.text_type
+            and self.text == other.text
+            and self.url == other.url
+        )
+
+    def __repr__(self) -> str:
         return f"TextNode({self.text}, {self.text_type.value}, {self.url})"
     
-    def text_node_to_html_node(text_node: TextNode) -> LeafNode:
-        match text_node.text_type:
-            case TextType.TEXT:
-                return LeafNode(tag= None, value=text_node.text)
-            case TextType.BOLD:
-                return LeafNode(tag="b",value=text_node.text)
-            case TextType.ITALIC:
-                return LeafNode(tag="i",value=text_node.text)
-            case TextType.CODE:
-                return LeafNode(tag="code",value=text_node.text)
-            case TextType.LINK:
-                return LeafNode(tag="a",value=text_node.text,props={"href": "https://google.com"})
-            case TextType.IMAGE:
-                return LeafNode(tag="img",value="",props={"src": "image url", "alt": "alt text"})
-            case _:
-                raise Exception("Invalid Text Type")
+def text_node_to_html_node(text_node: TextNode) -> LeafNode:
+    if text_node.text_type == TextType.TEXT:
+        return LeafNode(None, text_node.text)
+    if text_node.text_type == TextType.BOLD:
+        return LeafNode("b", text_node.text)
+    if text_node.text_type == TextType.ITALIC:
+        return LeafNode("i", text_node.text)
+    if text_node.text_type == TextType.CODE:
+        return LeafNode("code", text_node.text)
+    if text_node.text_type == TextType.LINK:
+        if text_node.url is None:
+            raise ValueError("invalid URL")
+        return LeafNode("a", text_node.text, {"href": text_node.url})
+    if text_node.text_type == TextType.IMAGE:
+        if text_node.url is None:
+            raise ValueError("invalid URL")
+        return LeafNode("img", "", {"src": text_node.url, "alt": text_node.text})
+    raise ValueError(f"invalid text type: {text_node.text_type}")
 
 class HTMLNode:
-    def __init__(self, tag: str | None = None, value: str | None = None, children: list[HTMLNode] | None = None, props: dict[str:str] | None = None) -> None:
-        self.tag: str | None = tag
-        self.value: str | None = value
-        self.children: list[HTMLNode] | None = children
-        self.props: dict[str:str] | None = props
-    
-    def to_html(self):
-        raise NotImplementedError
-    
+    def __init__(
+        self,
+        tag: str | None = None,
+        value: str | None = None,
+        children: list["HTMLNode"] | None = None,
+        props: dict[str, str] | None = None,
+    ) -> None:
+        self.tag = tag
+        self.value = value
+        self.children = children
+        self.props = props
+
+    def to_html(self) -> str:
+        raise NotImplementedError("to_html method not implemented")
+
     def props_to_html(self) -> str:
-        return_string: str = ""
-        if self.props == None: return return_string
-        for key, value in self.props.items():
-            return_string+= f" {key}={value}"
-        return return_string
-    
+        if self.props is None:
+            return ""
+        props_html = ""
+        for prop in self.props:
+            props_html += f' {prop}="{self.props[prop]}"'
+        return props_html
+
     def __repr__(self) -> str:
-        return f"Tag: {self.tag}\nValue: {self.value}\nChildren: {self.children}\nProps: {self.props}"
-    
+        return f"HTMLNode({self.tag}, {self.value}, children: {self.children}, {self.props})"
+ 
 class LeafNode(HTMLNode):
-    def __init__(self, tag: str, value: str, props: dict[str:str] = None) -> None:
-        super().__init__(tag,value,None,props)
-    
-    def to_html(self):
-        if self.value == None: raise ValueError("Leaf: Value is None")
-        if self.tag == None: return self.value
+    def __init__(
+        self, tag: str | None, value: str, props: dict[str, str] | None = None
+    ) -> None:
+        super().__init__(tag, value, None, props)
 
-        start = f"<{self.tag}>"
-        end = f"</{self.tag}>"
+    def to_html(self) -> str:
+        if self.value is None:
+            raise ValueError("invalid HTML: no value")
+        if self.tag is None:
+            return self.value
+        return f"<{self.tag}{self.props_to_html()}>{self.value}</{self.tag}>"
 
-        if self.tag == "a":
-            temp: str =""
-            for key, value in self.props.items():
-                temp+=f"<a {key}=\"{value}\">{self.value}{end}"
-            return temp
-        
-        return f"{start}{self.value}{end}"
-    
-    def __repr__(self):
-        return f"Tag: {self.tag}\nValue: {self.value}\nProps: {self.props}"
+    def __repr__(self) -> str:
+        return f"LeafNode({self.tag}, {self.value}, {self.props})"
     
 class ParentNode(HTMLNode):
-    def __init__(self, tag: str, children: list[HTMLNode], props: dict[str:str] = None) -> None:
-        super().__init__(tag= tag,value= None,children= children,props= props)
-    
-    def to_html(self) -> str:
-        if self.tag == None: raise ValueError("Parrent Node is missing Tag")
-        if self.children == None: raise ValueError("Parent Node is missing children")
-        start = f"<{self.tag}>"
-        end = f"</{self.tag}>"
+    def __init__(
+        self, tag: str, children: list[HTMLNode], props: dict[str, str] | None = None
+    ) -> None:
+        super().__init__(tag, None, children, props)
 
-        temp= start
+    def to_html(self) -> str:
+        if self.tag is None:
+            raise ValueError("invalid HTML: no tag")
+        if self.children is None:
+            raise ValueError("invalid HTML: no children")
+        children_html = ""
         for child in self.children:
-            temp+=child.to_html()
-        temp+= end
-        return temp
-    
+            children_html += child.to_html()
+        return f"<{self.tag}{self.props_to_html()}>{children_html}</{self.tag}>"
+
+    def __repr__(self) -> str:
+        return f"ParentNode({self.tag}, children: {self.children}, {self.props})"
